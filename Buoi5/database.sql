@@ -12,8 +12,13 @@ CREATE TABLE IF NOT EXISTS users (
 -- Tai khoan mau: admin / admin123.
 -- Hash duoc tao bang password_hash('admin123', PASSWORD_DEFAULT).
 INSERT INTO users (username, password)
-SELECT 'admin', 'admin123'
+SELECT 'admin', '$2y$10$8Q2KQXuQCyUwCf2BinUZiedrJUd6YUxYJx8bez6BJEbjpenQg3AXy'
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
+
+-- Sua du lieu mau tu ban SQL cu; khong ghi de mat khau da duoc hash.
+UPDATE users
+SET password = '$2y$10$8Q2KQXuQCyUwCf2BinUZiedrJUd6YUxYJx8bez6BJEbjpenQg3AXy'
+WHERE username = 'admin' AND BINARY password = BINARY 'admin123';
 
 CREATE TABLE IF NOT EXISTS products (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
