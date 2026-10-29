@@ -1,0 +1,52 @@
+* { box-sizing: border-box; }
+body { margin: 0; padding: 40px 20px; background: #f5f3ef; color: #292d36; font-family: Arial, sans-serif; line-height: 1.6; }
+[v-cloak] { display: none; }
+main { max-width: 960px; margin: auto; }
+.movie { padding: 30px; background: #242a35; border-radius: 18px; color: #fff; margin-bottom: 24px; }
+.eyebrow { color: #ffcf8d; letter-spacing: 2px; font-size: 12px; font-weight: bold; }
+h1 { font-size: clamp(26px, 5vw, 36px); margin: 8px 0; }
+.movie p { margin: 0; color: #d2d8e2; }
+.layout { display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px; align-items: start; }
+.panel { padding: 28px; background: white; border: 1px solid #dededb; border-radius: 16px; }
+h2 { font-size: 21px; margin: 0 0 20px; }
+.field { margin-bottom: 22px; }
+.field > label, legend { display: block; font-weight: bold; margin-bottom: 7px; }
+input[type="text"], input[type="number"], select { width: 100%; min-width: 0; padding: 11px 12px; font: inherit; color: inherit; border: 1px solid #b7bdc7; border-radius: 8px; background: white; }
+fieldset { padding: 0; border: 0; margin: 0 0 22px; min-width: 0; }
+legend { padding: 0; }
+.ticket-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ticket-option { padding: 12px; border: 1px solid #d8dde4; border-radius: 8px; cursor: pointer; }
+.ticket-option.selected { border-color: #b6511c; background: #fff5eb; }
+.ticket-option span { display: block; margin-left: 24px; color: #606a79; font-size: 14px; }
+input[type="radio"], input[type="checkbox"] { accent-color: #b6511c; }
+.quantity { display: flex; gap: 10px; }
+.quantity input { text-align: center; }
+button { font: inherit; cursor: pointer; border: 1px solid #c9cdd3; border-radius: 8px; padding: 10px 16px; background: #fff; color: #292d36; }
+button:hover:not(:disabled) { background: #f0f2f5; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.quantity button { width: 46px; flex-shrink: 0; font-size: 20px; padding: 6px; }
+:is(input, select, button):focus-visible { outline: 3px solid #e9a56e; outline-offset: 3px; }
+.hint { font-size: 13px; color: #606a79; margin: 6px 0 0; }
+.error { color: #b12636; }
+.combo { display: flex; align-items: start; gap: 10px; padding: 14px; background: #f7f5f1; border-radius: 8px; cursor: pointer; }
+.combo input { width: 18px; height: 18px; margin-top: 5px; flex-shrink: 0; }
+.combo small { display: block; color: #606a79; }
+.actions { display: flex; gap: 12px; margin-top: 24px; }
+.primary { background: #b6511c; color: #fff; border-color: #b6511c; flex: 1; font-weight: bold; }
+.primary:hover:not(:disabled) { background: #974015; }
+dl { margin: 0; }
+.row { display: flex; justify-content: space-between; gap: 18px; margin: 12px 0; }
+dt { color: #606a79; }
+dd { margin: 0; font-weight: bold; text-align: right; overflow-wrap: anywhere; min-width: 0; }
+.total { border-top: 1px dashed #c9cdd3; padding-top: 18px; margin-top: 20px; align-items: center; }
+.total dt { color: #292d36; font-weight: bold; }
+.total dd { color: #a24415; font-size: 25px; }
+.confirmation { margin-top: 24px; border: 1px solid #9acaae; background: #effaf3; }
+.confirmation h2 { color: #1c6640; margin-bottom: 8px; }
+.confirmation p { margin: 0 0 16px; }
+footer { margin-top: 22px; color: #606a79; font-size: 13px; }
+@media (max-width: 720px) {
+    body { padding: 24px 16px; }
+    .layout { grid-template-columns: 1fr; }
+    .panel, .movie { padding: 22px; }
+}

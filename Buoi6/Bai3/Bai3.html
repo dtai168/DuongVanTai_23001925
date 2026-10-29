@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 3 - Quản lý công việc cá nhân</title>
+    <link rel="stylesheet" href="Bai3.css">
+</head>
+<body>
+    <main id="app" v-cloak>
+        <header>
+            <div class="eyebrow">BÀI THỰC HÀNH 03 · VUE.JS</div>
+            <h1>Công việc trong ngày</h1>
+            <p class="subtitle">Ghi lại việc cần làm và theo dõi tiến độ của bạn.</p>
+        </header>
+
+        <section class="panel" aria-label="Quản lý công việc">
+            <div class="stats" aria-live="polite" aria-atomic="true">
+                <div class="stat"><strong>{{ tongSoCongViec }}</strong><span>Tổng công việc</span></div>
+                <div class="stat"><strong>{{ soViecChuaHoanThanh }}</strong><span>Chưa hoàn thành</span></div>
+                <div class="stat"><strong>{{ tongSoCongViec - soViecChuaHoanThanh }}</strong><span>Đã hoàn thành</span></div>
+            </div>
+
+            <!-- Nút submit và phím Enter cùng gọi một method; .prevent ngăn tải lại trang. -->
+            <form @submit.prevent="themCongViec">
+                <label for="new-task">Thêm công việc mới</label>
+                <div class="add-row">
+                    <input id="new-task" type="text" v-model.trim="tenCongViecMoi"
+                        @input="loiNhap = ''" placeholder="Ví dụ: Ôn tập Vue.js"
+                        autocomplete="off" :aria-invalid="!!loiNhap" aria-describedby="task-hint task-error">
+                    <button type="submit" class="primary" :disabled="!tenCongViecMoi.trim()">Thêm</button>
+                </div>
+                <p id="task-hint" class="hint">Nhấn Enter hoặc nút Thêm để thêm công việc.</p>
+                <p id="task-error" v-show="loiNhap" class="error" role="alert">{{ loiNhap }}</p>
+            </form>
+
+            <div class="filters" role="group" aria-label="Lọc trạng thái công việc">
+                <button type="button" @click="boLoc = 'tat-ca'"
+                    :class="{ active: boLoc === 'tat-ca' }" :aria-pressed="boLoc === 'tat-ca'">Tất cả</button>
+                <button type="button" @click="boLoc = 'chua-hoan-thanh'"
+                    :class="{ active: boLoc === 'chua-hoan-thanh' }" :aria-pressed="boLoc === 'chua-hoan-thanh'">Chưa hoàn thành</button>
+                <button type="button" @click="boLoc = 'da-hoan-thanh'"
+                    :class="{ active: boLoc === 'da-hoan-thanh' }" :aria-pressed="boLoc === 'da-hoan-thanh'">Đã hoàn thành</button>
+            </div>
+
+            <h2 class="list-title">Danh sách công việc</h2>
+            <div v-if="tongSoCongViec === 0" class="empty" role="status">
+                <strong>Chưa có công việc nào</strong>
+                <p>Thêm công việc đầu tiên bằng ô nhập phía trên.</p>
+            </div>
+            <div v-else-if="congViecDaLoc.length === 0" class="empty" role="status">
+                <strong>Không có công việc {{ boLoc === 'da-hoan-thanh' ? 'đã hoàn thành' : 'chưa hoàn thành' }}</strong>
+                <p>Chọn bộ lọc khác để xem các công việc còn lại.</p>
+            </div>
+            <ul v-else class="task-list">
+                <!-- Dùng id ổn định làm key, không dùng vị trí trong mảng. -->
+                <li v-for="congViec in congViecDaLoc" :key="congViec.id" class="task">
+                    <input type="checkbox" :id="'task-' + congViec.id" v-model="congViec.hoanThanh">
+                    <label :for="'task-' + congViec.id" :class="{ completed: congViec.hoanThanh }">{{ congViec.ten }}</label>
+                    <button type="button" class="delete" @click="xoaCongViec(congViec.id)"
+                        :aria-label="'Xóa công việc: ' + congViec.ten">Xóa</button>
+                </li>
+            </ul>
+
+            <div class="list-footer">
+                <p aria-live="polite">Đang hiển thị {{ congViecDaLoc.length }} / {{ tongSoCongViec }} công việc</p>
+                <button type="button" class="delete" @click="xoaDaHoanThanh"
+                    :disabled="tongSoCongViec === soViecChuaHoanThanh">Xóa các việc đã hoàn thành</button>
+            </div>
+        </section>
+        <footer>Danh sách mẫu · Dữ liệu chỉ lưu trong phiên hiện tại và được đặt lại khi tải lại trang.</footer>
+    </main>
+    <noscript>Vui lòng bật JavaScript để quản lý công việc.</noscript>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="Bai3.js"></script>
+</body>
+</html>

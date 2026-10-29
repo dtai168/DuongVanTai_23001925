@@ -1,0 +1,52 @@
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    padding: 48px 20px;
+    font-family: Arial, sans-serif;
+    color: #243047;
+    background: #f0f4f8;
+    line-height: 1.6;
+}
+[v-cloak] { display: none; }
+main { max-width: 900px; margin: auto; }
+.eyebrow { color: #4660ac; font-weight: bold; letter-spacing: 2px; font-size: 12px; }
+h1 { margin: 8px 0; font-size: clamp(26px, 5vw, 36px); }
+.subtitle { margin: 0 0 28px; color: #58677b; }
+.layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: start; }
+.card, .editor { background: white; border: 1px solid #dce3ed; border-radius: 18px; padding: 28px; }
+.card { border-top: 5px solid #4660ac; }
+.profile { display: flex; gap: 18px; align-items: center; margin-bottom: 24px; }
+.avatar { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; background: #e8edfa; }
+h2 { margin: 0 0 8px; font-size: 22px; overflow-wrap: anywhere; }
+.status { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 13px; }
+.studying { color: #16613d; background: #e5f5ec; }
+.stopped { color: #6b4550; background: #f5e9ed; }
+dl { margin: 0; }
+.info-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #edf0f5; }
+dt { color: #58677b; }
+dd { margin: 0; font-weight: bold; text-align: right; overflow-wrap: anywhere; }
+.grade { padding: 3px 10px; border-radius: 6px; display: inline-block; }
+.gioi { color: #16613d; background: #e5f5ec; }
+.kha { color: #234f9c; background: #e8effc; }
+.trung-binh { color: #825500; background: #fff3cf; }
+.chua-dat { color: #ad2537; background: #fdebef; }
+button { cursor: pointer; font: inherit; border: 0; border-radius: 8px; padding: 10px 16px; background: #4660ac; color: white; margin-top: 24px; }
+button:hover { background: #354c90; }
+button:focus-visible, input:focus-visible { outline: 3px solid #8fa8e8; outline-offset: 3px; }
+.intro { margin-top: 16px; padding: 16px; background: #f5f7fc; border-radius: 8px; overflow-wrap: anywhere; }
+.intro h3 { margin: 0 0 6px; font-size: 16px; }
+.intro p { margin: 0; }
+.editor h2 { font-size: 19px; }
+.hint { font-size: 13px; color: #58677b; margin: 0 0 20px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 14px; margin-bottom: 5px; font-weight: bold; }
+.field input { width: 100%; padding: 10px 12px; border: 1px solid #bdc8d8; border-radius: 7px; font: inherit; }
+.checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.checkbox input { width: 18px; height: 18px; accent-color: #4660ac; }
+.error { color: #ad2537; font-size: 13px; }
+footer { margin-top: 22px; font-size: 13px; color: #58677b; }
+@media (max-width: 700px) {
+    body { padding: 28px 16px; }
+    .layout { grid-template-columns: 1fr; }
+    .card, .editor { padding: 22px; }
+}

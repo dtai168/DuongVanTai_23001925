@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 2 - Đặt vé xem phim</title>
+    <link rel="stylesheet" href="Bai2.css">
+</head>
+<body>
+    <main id="app" v-cloak>
+        <header class="movie">
+            <div class="eyebrow">BÀI THỰC HÀNH 02 · ĐẶT VÉ XEM PHIM</div>
+            <h1>{{ tenPhim }}</h1>
+            <p>Phim minh họa · 2D · 110 phút</p>
+        </header>
+
+        <div class="layout">
+            <!-- Ngăn tải lại trang khi gửi form. -->
+            <form class="panel" @submit.prevent="datVe" novalidate>
+                <h2>Thông tin đặt vé</h2>
+                <div class="field">
+                    <label for="customer-name">Họ tên khách hàng</label>
+                    <!-- .trim loại bỏ khoảng trắng ở hai đầu. -->
+                    <input id="customer-name" type="text" v-model.trim="hoTen"
+                        placeholder="Nhập họ và tên" autocomplete="name" required>
+                </div>
+                <div class="field">
+                    <label for="showtime">Suất chiếu</label>
+                    <select id="showtime" v-model="suatChieu">
+                        <option value="10:00">10:00 — Buổi sáng</option>
+                        <option value="14:30">14:30 — Buổi chiều</option>
+                        <option value="19:00">19:00 — Buổi tối</option>
+                    </select>
+                </div>
+
+                <fieldset>
+                    <legend>Loại vé</legend>
+                    <div class="ticket-options">
+                        <label class="ticket-option" :class="{ selected: loaiVe === 'thuong' }">
+                            <input type="radio" name="ticket-type" value="thuong" v-model="loaiVe"> Vé thường
+                            <span>70.000 đồng / vé</span>
+                        </label>
+                        <label class="ticket-option" :class="{ selected: loaiVe === 'vip' }">
+                            <input type="radio" name="ticket-type" value="vip" v-model="loaiVe"> Vé VIP
+                            <span>100.000 đồng / vé</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <div class="field">
+                    <label for="quantity">Số lượng vé</label>
+                    <div class="quantity">
+                        <button type="button" @click="giamSoLuong" aria-label="Giảm số lượng vé"
+                            :disabled="soLuongHopLe && soLuong <= 1">−</button>
+                        <!-- .number chuyển dữ liệu nhập thành số. -->
+                        <input id="quantity" type="number" min="1" max="10" step="1"
+                            v-model.number="soLuong" :aria-invalid="!soLuongHopLe" aria-describedby="quantity-help" required>
+                        <button type="button" @click="tangSoLuong" aria-label="Tăng số lượng vé"
+                            :disabled="soLuongHopLe && soLuong >= 10">+</button>
+                    </div>
+                    <p id="quantity-help" class="hint" :class="{ error: !soLuongHopLe }">
+                        Chỉ chấp nhận số nguyên từ 1 đến 10.
+                    </p>
+                </div>
+
+                <label class="combo">
+                    <input type="checkbox" v-model="chonCombo">
+                    <span>Thêm combo bắp nước<small>45.000 đồng / đơn đặt vé</small></span>
+                </label>
+                <div class="actions">
+                    <button type="button" @click="datLai">Đặt lại</button>
+                    <button type="submit" class="primary" :disabled="!coTheDatVe">Đặt vé</button>
+                </div>
+                <p v-if="!hoTen" class="hint">Nhập họ tên và số lượng hợp lệ để đặt vé.</p>
+            </form>
+
+            <aside class="panel" aria-labelledby="summary-title">
+                <h2 id="summary-title">Chi tiết thanh toán</h2>
+                <dl>
+                    <div class="row"><dt>Suất chiếu</dt><dd>{{ suatChieu }}</dd></div>
+                    <div class="row"><dt>Loại vé</dt><dd>{{ loaiVe === 'vip' ? 'Vé VIP' : 'Vé thường' }}</dd></div>
+                    <div class="row"><dt>Đơn giá</dt><dd>{{ dinhDangTien(giaVe) }}</dd></div>
+                    <div class="row"><dt>Số lượng</dt><dd>{{ soLuongHopLe ? soLuong : '—' }}</dd></div>
+                    <div class="row"><dt>Combo bắp nước</dt><dd>{{ dinhDangTien(tienCombo) }}</dd></div>
+                    <div class="row total" aria-live="polite">
+                        <dt>Tổng tiền</dt><dd>{{ soLuongHopLe ? dinhDangTien(tongTien) : '—' }}</dd>
+                    </div>
+                </dl>
+                <p class="hint">Combo được tính một lần cho mỗi đơn, không phụ thuộc số lượng vé.</p>
+            </aside>
+        </div>
+
+        <section v-if="xacNhan" class="panel confirmation" role="status" aria-live="polite">
+            <h2>Đặt vé thành công!</h2>
+            <p>Thông tin xác nhận của đơn vừa đặt:</p>
+            <!-- Lưu bản sao để thông tin xác nhận không đổi khi sửa form. -->
+            <dl>
+                <div class="row"><dt>Khách hàng</dt><dd>{{ xacNhan.hoTen }}</dd></div>
+                <div class="row"><dt>Phim</dt><dd>{{ xacNhan.tenPhim }}</dd></div>
+                <div class="row"><dt>Suất chiếu</dt><dd>{{ xacNhan.suatChieu }}</dd></div>
+                <div class="row"><dt>Loại vé</dt><dd>{{ xacNhan.loaiVe }}</dd></div>
+                <div class="row"><dt>Số lượng</dt><dd>{{ xacNhan.soLuong }}</dd></div>
+                <div class="row"><dt>Combo bắp nước</dt><dd>{{ xacNhan.chonCombo ? 'Có' : 'Không' }}</dd></div>
+                <div class="row total"><dt>Tổng thanh toán</dt><dd>{{ dinhDangTien(xacNhan.tongTien) }}</dd></div>
+            </dl>
+        </section>
+        <footer>Bài thực hành Vue.js · Đơn đặt vé minh họa, chỉ lưu trong phiên hiện tại.</footer>
+    </main>
+    <noscript>Vui lòng bật JavaScript để sử dụng form đặt vé.</noscript>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="Bai2.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 1 - Thẻ thông tin sinh viên</title>
+    <link rel="stylesheet" href="Bai1.css">
+</head>
+<body>
+    <main id="app" v-cloak>
+        <header>
+            <div class="eyebrow">BÀI THỰC HÀNH 01 · VUE.JS</div>
+            <h1>Thẻ thông tin sinh viên</h1>
+            <p class="subtitle">Thông tin và kết quả học tập được cập nhật ngay khi dữ liệu thay đổi.</p>
+        </header>
+
+        <div class="layout">
+            <article class="card" aria-label="Thông tin sinh viên">
+                <div class="profile">
+                    <!-- v-bind gắn cả đường dẫn ảnh và nội dung thay thế. -->
+                    <img class="avatar" v-bind:src="anhDaiDien" v-bind:alt="'Ảnh đại diện của ' + hoTen" width="88" height="88">
+                    <div>
+                        <!-- Nội suy họ tên bằng {{ }}. -->
+                        <h2>{{ hoTen }}</h2>
+                        <span class="status" :class="dangHoc ? 'studying' : 'stopped'">
+                            <span v-if="dangHoc">Đang học</span>
+                            <span v-else>Đã nghỉ</span>
+                        </span>
+                    </div>
+                </div>
+
+                <dl>
+                    <div class="info-row">
+                        <dt>Mã sinh viên</dt>
+                        <dd>{{ maSinhVien }}</dd>
+                    </div>
+                    <div class="info-row">
+                        <dt>Lớp</dt>
+                        <dd v-text="lop"></dd>
+                    </div>
+                    <div class="info-row">
+                        <dt>Điểm trung bình</dt>
+                        <dd>{{ diemHopLe ? diemTrungBinh : '—' }} / 10</dd>
+                    </div>
+                    <div class="info-row" aria-live="polite">
+                        <dt>Xếp loại</dt>
+                        <dd>
+                            <!-- :class đổi màu; v-if / v-else-if chọn xếp loại. -->
+                            <span v-if="diemHopLe" class="grade" :class="{
+                                'gioi': diemTrungBinh >= 8,
+                                'kha': diemTrungBinh >= 6.5 && diemTrungBinh < 8,
+                                'trung-binh': diemTrungBinh >= 5 && diemTrungBinh < 6.5,
+                                'chua-dat': diemTrungBinh < 5
+                            }">
+                                <span v-if="diemTrungBinh >= 8">Giỏi</span>
+                                <span v-else-if="diemTrungBinh >= 6.5">Khá</span>
+                                <span v-else-if="diemTrungBinh >= 5">Trung bình</span>
+                                <span v-else>Chưa đạt</span>
+                            </span>
+                            <span v-else class="error">Chưa có điểm hợp lệ</span>
+                        </dd>
+                    </div>
+                </dl>
+
+                <button type="button" @click="hienGioiThieu = !hienGioiThieu"
+                    :aria-expanded="hienGioiThieu" aria-controls="gioi-thieu">
+                    {{ hienGioiThieu ? 'Ẩn giới thiệu' : 'Hiện giới thiệu' }}
+                </button>
+                <!-- v-show ẩn/hiện phần tử bằng CSS, giữ phần tử trong DOM. -->
+                <section id="gioi-thieu" class="intro" v-show="hienGioiThieu">
+                    <h3>Giới thiệu</h3>
+                    <p>{{ gioiThieu }}</p>
+                </section>
+            </article>
+
+            <aside class="editor" aria-labelledby="edit-title">
+                <h2 id="edit-title">Thay đổi dữ liệu</h2>
+                <p class="hint">Thử đổi điểm thành 8, 6.5 hoặc 5 để xem xếp loại tương ứng.</p>
+                <!-- v-model giúp thay đổi trực tiếp dữ liệu trong data(). -->
+                <div class="field">
+                    <label for="student-id">Mã sinh viên</label>
+                    <input id="student-id" type="text" v-model="maSinhVien">
+                </div>
+                <div class="field">
+                    <label for="full-name">Họ tên</label>
+                    <input id="full-name" type="text" v-model="hoTen">
+                </div>
+                <div class="field">
+                    <label for="class-name">Lớp</label>
+                    <input id="class-name" type="text" v-model="lop">
+                </div>
+                <div class="field">
+                    <label for="avatar-url">Đường dẫn ảnh đại diện</label>
+                    <input id="avatar-url" type="text" v-model="anhDaiDien">
+                </div>
+                <div class="field">
+                    <label for="average">Điểm trung bình (0–10)</label>
+                    <input id="average" type="number" min="0" max="10" step="0.1"
+                        v-model.number="diemTrungBinh" :aria-invalid="!diemHopLe" aria-describedby="score-error">
+                    <p id="score-error" v-show="!diemHopLe" class="error">Vui lòng nhập điểm từ 0 đến 10.</p>
+                </div>
+                <label class="checkbox">
+                    <input type="checkbox" v-model="dangHoc">
+                    Sinh viên đang học
+                </label>
+            </aside>
+        </div>
+        <footer>Dữ liệu minh họa · Thay đổi trên trang chỉ có hiệu lực trong phiên hiện tại.</footer>
+    </main>
+    <noscript>Vui lòng bật JavaScript để xem thông tin sinh viên.</noscript>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="Bai1.js"></script>
+</body>
+</html>
