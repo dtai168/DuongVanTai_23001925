@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 3: Giỏ hàng với Props và $emit - Vue 3</title>
+  <!-- Bootstrap 5 CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    .empty-cart-icon {
+      font-size: 4rem;
+      color: #adb5bd;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+      <div>
+        <h2 class="fw-bold text-primary mb-1">
+          <i class="bi bi-cart3 me-2"></i>Quản Lý Giỏ Hàng
+        </h2>
+        <p class="text-muted mb-0">Bài tập 3: Luồng dữ liệu một chiều (One-Way Data Flow), Props và Custom Events ($emit)</p>
+      </div>
+      <div>
+        <button class="btn btn-outline-primary btn-sm" @click="khoiPhucDuLieuKiemTra">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Nạp dữ liệu kiểm tra mẫu
+        </button>
+      </div>
+    </div>
+
+    <!-- Hộp thông tin đối chiếu kết quả kiểm tra (Test Case) -->
+    <div class="card border-0 shadow-sm mb-4 bg-light">
+      <div class="card-body">
+        <h6 class="fw-bold text-dark mb-2">
+          <i class="bi bi-patch-check-fill text-success me-1"></i>Kiểm tra kết quả theo đề bài:
+        </h6>
+        <p class="mb-1 small text-secondary">
+          Với <strong>2 bút (5.000 đ)</strong> và <strong>3 quyển vở (12.000 đ)</strong>:
+        </p>
+        <div class="d-flex gap-4 small mt-1">
+          <span>
+            Tổng số lượng: <strong :class="tongSoLuong === 5 ? 'text-success' : 'text-danger'">{{ tongSoLuong }}</strong> (kỳ vọng: 5)
+          </span>
+          <span>
+            Tổng tiền: <strong :class="tongTien === 46000 ? 'text-success' : 'text-danger'">{{ dinhDangTien(tongTien) }}</strong> (kỳ vọng: 46.000 đ)
+          </span>
+          <span v-if="kiemTraKetQuaChuan" class="badge bg-success">
+            <i class="bi bi-check-all me-1"></i>Khớp chính xác với đề bài!
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Bảng giỏ hàng -->
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0 fw-bold">Danh Sách Mặt Hàng</h5>
+            <span class="badge bg-primary rounded-pill">
+              {{ gioHang.length }} sản phẩm
+            </span>
+          </div>
+
+          <!-- Yêu cầu 8: Khi xóa hết sản phẩm, hiển thị "Giỏ hàng trống" -->
+          <div v-if="gioHang.length === 0" class="text-center py-5">
+            <i class="bi bi-cart-x empty-cart-icon d-block mb-3"></i>
+            <h5 class="text-muted fw-semibold">Giỏ hàng trống</h5>
+            <p class="text-secondary small mb-3">Chưa có sản phẩm nào trong giỏ hàng của bạn.</p>
+            <button class="btn btn-primary btn-sm" @click="khoiPhucDuLieuKiemTra">
+              Thêm sản phẩm vào giỏ
+            </button>
+          </div>
+
+          <!-- Bảng các dòng giỏ hàng -->
+          <div v-else class="table-responsive">
+            <table class="table align-middle table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">Sản phẩm</th>
+                  <th scope="col" class="text-end">Đơn giá</th>
+                  <th scope="col" class="text-center">Số lượng (1 - 99)</th>
+                  <th scope="col" class="text-end">Thành tiền</th>
+                  <th scope="col" class="text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Yêu cầu 2, 3, 4, 6: Component con nhận props và emit sự kiện lên component cha -->
+                <dong-gio-hang
+                  v-for="item in gioHang"
+                  :key="item.id"
+                  :id="item.id"
+                  :ten="item.ten"
+                  :don-gia="item.donGia"
+                  :so-luong="item.soLuong"
+                  @doi-so-luong="xuLyDoiSoLuong"
+                  @yeu-cau-xoa="xuLyYeuCauXoa"
+                ></dong-gio-hang>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Thẻ tóm tắt đơn hàng (Yêu cầu 7: Computed tổng số lượng và tổng tiền) -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+          <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0 fw-bold">Tóm Tắt Đơn Hàng</h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-3 text-secondary">
+              <span>Tổng số lượng sản phẩm:</span>
+              <span class="fw-bold text-dark fs-5">{{ tongSoLuong }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3 text-secondary">
+              <span>Tạm tính:</span>
+              <span class="fw-semibold text-dark">{{ dinhDangTien(tongTien) }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3 text-secondary">
+              <span>Phí vận chuyển:</span>
+              <span class="text-success fw-semibold">Miễn phí</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between mb-4">
+              <span class="fw-bold fs-5">Tổng tiền thanh toán:</span>
+              <span class="fw-bold fs-4 text-danger">{{ dinhDangTien(tongTien) }}</span>
+            </div>
+
+            <button 
+              class="btn btn-primary w-100 py-2 fw-semibold" 
+              :disabled="gioHang.length === 0">
+              <i class="bi bi-credit-card me-2"></i>Tiến hành thanh toán
+            </button>
+            <button 
+              v-if="gioHang.length > 0"
+              class="btn btn-outline-danger w-100 mt-2 btn-sm" 
+              @click="xoaToanBoGioHang">
+              <i class="bi bi-trash3 me-1"></i>Xóa sạch giỏ hàng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <!-- Nạp component con DongGioHang -->
+  <script src="components/DongGioHang.js"></script>
+
+  <script>
+    const { createApp } = Vue;
+
+    const app = createApp({
+      data() {
+        return {
+          // Yêu cầu 1: Danh sách các mục trong giỏ (mỗi mục: id, ten, donGia, soLuong)
+          // Khởi tạo theo đúng bộ dữ liệu kiểm tra trong đề bài
+          gioHang: [
+            { id: 1, ten: 'Bút bi Thiên Long', donGia: 5000, soLuong: 2 },
+            { id: 2, ten: 'Quyển vở học sinh 96 trang', donGia: 12000, soLuong: 3 }
+          ]
+        };
+      },
+
+      computed: {
+        // Yêu cầu 7: Component cha dùng computed tính tổng số lượng
+        tongSoLuong() {
+          return this.gioHang.reduce((tong, sp) => tong + sp.soLuong, 0);
+        },
+
+        // Yêu cầu 7: Component cha dùng computed tính tổng tiền
+        tongTien() {
+          return this.gioHang.reduce((tong, sp) => tong + (sp.donGia * sp.soLuong), 0);
+        },
+
+        // Kiểm tra khớp với kết quả kiểm tra của đề bài
+        kiemTraKetQuaChuan() {
+          return this.tongSoLuong === 5 && this.tongTien === 46000;
+        }
+      },
+
+      methods: {
+        dinhDangTien(soTien) {
+          return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(soTien || 0);
+        },
+
+        // Yêu cầu 4 & 5: Component cha nhận sự kiện, kiểm tra số lượng nguyên từ 1 đến 99 rồi cập nhật mảng
+        xuLyDoiSoLuong(payload) {
+          const { id, soLuongMoi } = payload;
+
+          // Yêu cầu 5: Kiểm tra số lượng chỉ được nhận giá trị nguyên từ 1 đến 99
+          if (!Number.isInteger(soLuongMoi) || soLuongMoi < 1 || soLuongMoi > 99) {
+            alert('Số lượng không hợp lệ! Chỉ chấp nhận số nguyên từ 1 đến 99.');
+            return;
+          }
+
+          // Cập nhật số lượng tại component cha (bảo đảm tính toàn vẹn của One-Way Data Flow)
+          const sp = this.gioHang.find(item => item.id === id);
+          if (sp) {
+            sp.soLuong = soLuongMoi;
+          }
+        },
+
+        // Yêu cầu 3 & 4: Nhận sự kiện yeu-cau-xoa và cập nhật giỏ hàng
+        xuLyYeuCauXoa(id) {
+          const sp = this.gioHang.find(item => item.id === id);
+          const tenSp = sp ? sp.ten : 'sản phẩm này';
+          
+          if (window.confirm(`Bạn có chắc chắn muốn xóa "${tenSp}" khỏi giỏ hàng?`)) {
+            this.gioHang = this.gioHang.filter(item => item.id !== id);
+          }
+        },
+
+        // Xóa toàn bộ giỏ hàng
+        xoaToanBoGioHang() {
+          if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ sản phẩm khỏi giỏ hàng?')) {
+            this.gioHang = [];
+          }
+        },
+
+        // Khôi phục dữ liệu mẫu kiểm tra
+        khoiPhucDuLieuKiemTra() {
+          this.gioHang = [
+            { id: 1, ten: 'Bút bi Thiên Long', donGia: 5000, soLuong: 2 },
+            { id: 2, ten: 'Quyển vở học sinh 96 trang', donGia: 12000, soLuong: 3 }
+          ];
+        }
+      }
+    });
+
+    // Đăng ký component <dong-gio-hang>
+    app.component('dong-gio-hang', DongGioHang);
+
+    app.mount('#app');
+  </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 1: Quản lý danh sách sản phẩm - Vue 3</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    .badge-out-of-stock {
+      background-color: #dc3545;
+    }
+    .badge-in-stock {
+      background-color: #198754;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+      <div>
+        <h2 class="fw-bold text-primary mb-1">
+          <i class="bi bi-box-seam me-2"></i>Quản Lý Danh Sách Sản Phẩm
+        </h2>
+        <p class="text-muted mb-0">Bài tập 1: Directive, methods, computed, watch, mounted</p>
+      </div>
+      <!-- Yêu cầu 10: Trạng thái trang đặt bằng mounted() -->
+      <div>
+        Trạng thái: 
+        <span class="badge" :class="trangThaiTrang === 'Sẵn sàng' ? 'bg-success' : 'bg-secondary'">
+          <i class="bi bi-check-circle me-1" v-if="trangThaiTrang === 'Sẵn sàng'"></i>{{ trangThaiTrang }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Thanh thống kê (Yêu cầu 8) -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm bg-white p-3">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary fs-3">
+              <i class="bi bi-card-list"></i>
+            </div>
+            <div>
+              <div class="text-muted small">Số sản phẩm hiển thị / Tổng số</div>
+              <div class="fs-4 fw-bold text-dark">{{ thongKeHienThi }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm bg-white p-3">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3 text-success fs-3">
+              <i class="bi bi-cash-stack"></i>
+            </div>
+            <div>
+              <div class="text-muted small">Tổng giá trị tồn kho (đang hiển thị)</div>
+              <div class="fs-4 fw-bold text-success">{{ dinhDangTien(tongGiaTriTonKho) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bộ lọc, tìm kiếm và sắp xếp kết hợp (Yêu cầu 2, 3, 4, 5, 9) -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <div class="row g-3">
+          <!-- Tìm kiếm (Yêu cầu 2 & 9) -->
+          <div class="col-md-5">
+            <label class="form-label fw-semibold small">
+              <i class="bi bi-search me-1"></i>Tìm kiếm theo tên
+            </label>
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Nhập tên sản phẩm cần tìm..." 
+              v-model="tuKhoa"
+            >
+            <!-- Thông báo từ watch khi từ khóa có đúng 1 ký tự (Yêu cầu 9) -->
+            <div v-if="thongBaoTuKhoa" class="text-warning small mt-1">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ thongBaoTuKhoa }}
+            </div>
+          </div>
+
+          <!-- Lọc danh mục (Yêu cầu 3) -->
+          <div class="col-md-4">
+            <label class="form-label fw-semibold small">
+              <i class="bi bi-funnel me-1"></i>Lọc theo danh mục
+            </label>
+            <select class="form-select" v-model="danhMucChon">
+              <option value="">-- Tất cả danh mục --</option>
+              <option v-for="dm in danhSachDanhMuc" :key="dm" :value="dm">{{ dm }}</option>
+            </select>
+          </div>
+
+          <!-- Sắp xếp giá (Yêu cầu 4) -->
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">
+              <i class="bi bi-arrow-down-up me-1"></i>Sắp xếp theo giá
+            </label>
+            <select class="form-select" v-model="kieuSapXep">
+              <option value="none">Mặc định</option>
+              <option value="asc">Giá: Thấp đến Cao</option>
+              <option value="desc">Giá: Cao đến Thấp</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form thêm sản phẩm mới (Yêu cầu 6) -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+          <i class="bi bi-plus-circle me-2 text-primary"></i>Thêm Sản Phẩm Mới
+        </h5>
+      </div>
+      <div class="card-body">
+        <form @submit.prevent="themSanPham">
+          <!-- Hiển thị lỗi form nếu có -->
+          <div v-if="loiForm" class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-octagon me-1"></i>{{ loiForm }}
+          </div>
+          
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" v-model.trim="spMoi.ten" placeholder="Nhập tên sản phẩm">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Danh mục <span class="text-danger">*</span></label>
+              <select class="form-select" v-model="spMoi.danhMuc">
+                <option v-for="dm in danhSachDanhMuc" :key="dm" :value="dm">{{ dm }}</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Giá (VNĐ) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" v-model.number="spMoi.gia" placeholder="Giá > 0" min="1">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-semibold">Tồn kho <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" v-model.number="spMoi.soLuongTon" placeholder="Số nguyên >= 0" min="0" step="1">
+            </div>
+          </div>
+          <div class="mt-3 text-end">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-plus-lg me-1"></i>Thêm sản phẩm
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bảng danh sách sản phẩm (Yêu cầu 1, 5, 7) -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 fw-bold">Danh Sách Sản Phẩm</h5>
+        <span class="badge bg-light text-dark border">
+          Kết quả tìm thấy: {{ sanPhamDaLoc.length }}
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" style="width: 70px;">ID</th>
+              <th scope="col">Tên sản phẩm</th>
+              <th scope="col">Danh mục</th>
+              <th scope="col" class="text-end">Đơn giá</th>
+              <th scope="col" class="text-center">Số lượng tồn</th>
+              <th scope="col" class="text-center">Trạng thái</th>
+              <th scope="col" class="text-end">Giá trị tồn</th>
+              <th scope="col" class="text-center" style="width: 100px;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="sanPhamDaLoc.length === 0">
+              <td colspan="8" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                Không tìm thấy sản phẩm nào phù hợp với bộ lọc hiện tại.
+              </td>
+            </tr>
+            <tr v-for="sp in sanPhamDaLoc" :key="sp.id">
+              <td class="fw-semibold text-secondary">#{{ sp.id }}</td>
+              <td class="fw-medium text-dark">{{ sp.ten }}</td>
+              <td><span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">{{ sp.danhMuc }}</span></td>
+              <td class="text-end fw-semibold">{{ dinhDangTien(sp.gia) }}</td>
+              <td class="text-center">{{ sp.soLuongTon }}</td>
+              <!-- Yêu cầu 1: Gắn nhãn Còn hàng / Hết hàng bằng màu khác nhau -->
+              <td class="text-center">
+                <span 
+                  class="badge" 
+                  :class="sp.soLuongTon > 0 ? 'badge-in-stock' : 'badge-out-of-stock'">
+                  {{ sp.soLuongTon > 0 ? 'Còn hàng' : 'Hết hàng' }}
+                </span>
+              </td>
+              <td class="text-end text-success fw-bold">
+                {{ dinhDangTien(sp.gia * sp.soLuongTon) }}
+              </td>
+              <!-- Yêu cầu 7: Xóa sản phẩm có xác nhận -->
+              <td class="text-center">
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-outline-danger" 
+                  @click="xoaSanPham(sp)" 
+                  title="Xóa sản phẩm">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          // Yêu cầu 10: Khởi tạo trạng thái ban đầu
+          trangThaiTrang: 'Đang tải...',
+
+          // Bộ lọc và tìm kiếm
+          tuKhoa: '',
+          thongBaoTuKhoa: '', // Yêu cầu 9
+          danhMucChon: '',
+          kieuSapXep: 'none',
+
+          // Danh mục sản phẩm cố định
+          danhSachDanhMuc: ['Điện tử', 'Laptop', 'Phụ kiện'],
+
+          // Dữ liệu gốc: Ít nhất 6 sản phẩm thuộc 3 danh mục
+          danhSachSanPham: [
+            { id: 1, ten: 'iPhone 15 Pro Max 256GB', gia: 29990000, danhMuc: 'Điện tử', soLuongTon: 15 },
+            { id: 2, ten: 'Samsung Galaxy S24 Ultra', gia: 27490000, danhMuc: 'Điện tử', soLuongTon: 8 },
+            { id: 3, ten: 'MacBook Pro 14 M3 Pro', gia: 42990000, danhMuc: 'Laptop', soLuongTon: 0 },
+            { id: 4, ten: 'Dell XPS 15 9530', gia: 35500000, danhMuc: 'Laptop', soLuongTon: 6 },
+            { id: 5, ten: 'Tai nghe Apple AirPods Pro 2', gia: 5790000, danhMuc: 'Phụ kiện', soLuongTon: 24 },
+            { id: 6, ten: 'Chuột Logitech MX Master 3S', gia: 2490000, danhMuc: 'Phụ kiện', soLuongTon: 0 },
+            { id: 7, ten: 'Bàn phím cơ Keychron K2 Pro', gia: 1950000, danhMuc: 'Phụ kiện', soLuongTon: 12 }
+          ],
+
+          // Form thêm mới sản phẩm
+          spMoi: {
+            ten: '',
+            danhMuc: 'Điện tử',
+            gia: null,
+            soLuongTon: null
+          },
+          loiForm: '',
+          nextId: 8
+        };
+      },
+
+      // Yêu cầu 9: Dùng watch thông báo khi từ khóa có đúng 1 ký tự
+      watch: {
+        tuKhoa(valMoi) {
+          const doDai = valMoi.trim().length;
+          if (doDai === 1) {
+            this.thongBaoTuKhoa = 'Từ khóa có đúng 1 ký tự. Hãy nhập thêm để tìm kiếm chính xác hơn!';
+          } else {
+            // Xóa thông báo khi từ khóa rỗng hoặc có từ 2 ký tự trở lên
+            this.thongBaoTuKhoa = '';
+          }
+        }
+      },
+
+      computed: {
+        // Yêu cầu 2, 3, 4, 5: Tìm kiếm, lọc và sắp xếp hoạt động kết hợp
+        // Không làm thay đổi mảng dữ liệu gốc
+        sanPhamDaLoc() {
+          let ketQua = [...this.danhSachSanPham];
+
+          // 1. Tìm kiếm theo tên (không phân biệt hoa thường)
+          if (this.tuKhoa.trim() !== '') {
+            const tuKhoaThuong = this.tuKhoa.trim().toLowerCase();
+            ketQua = ketQua.filter(sp => sp.ten.toLowerCase().includes(tuKhoaThuong));
+          }
+
+          // 2. Lọc theo danh mục
+          if (this.danhMucChon !== '') {
+            ketQua = ketQua.filter(sp => sp.danhMuc === this.danhMucChon);
+          }
+
+          // 3. Sắp xếp theo giá (sử dụng bản sao để không đổi mảng gốc)
+          if (this.kieuSapXep === 'asc') {
+            ketQua.sort((a, b) => a.gia - b.gia);
+          } else if (this.kieuSapXep === 'desc') {
+            ketQua.sort((a, b) => b.gia - a.gia);
+          }
+
+          return ketQua;
+        },
+
+        // Yêu cầu 8: Số sản phẩm đang hiển thị trên tổng số sản phẩm
+        thongKeHienThi() {
+          return `${this.sanPhamDaLoc.length} / ${this.danhSachSanPham.length}`;
+        },
+
+        // Yêu cầu 8: Tổng giá trị tồn kho của các sản phẩm đang hiển thị (giá * số lượng tồn)
+        tongGiaTriTonKho() {
+          return this.sanPhamDaLoc.reduce((tong, sp) => {
+            return tong + (sp.gia * sp.soLuongTon);
+          }, 0);
+        }
+      },
+
+      methods: {
+        dinhDangTien(soTien) {
+          return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(soTien || 0);
+        },
+
+        // Yêu cầu 6: Thêm sản phẩm mới và kiểm tra điều kiện
+        themSanPham() {
+          this.loiForm = '';
+
+          // Kiểm tra tên không rỗng
+          if (!this.spMoi.ten || this.spMoi.ten.trim() === '') {
+            this.loiForm = 'Vui lòng nhập tên sản phẩm.';
+            return;
+          }
+
+          // Kiểm tra giá lớn hơn 0
+          if (this.spMoi.gia === null || isNaN(this.spMoi.gia) || this.spMoi.gia <= 0) {
+            this.loiForm = 'Giá sản phẩm phải là số lớn hơn 0.';
+            return;
+          }
+
+          // Kiểm tra tồn kho là số nguyên không âm
+          if (
+            this.spMoi.soLuongTon === null || 
+            isNaN(this.spMoi.soLuongTon) || 
+            !Number.isInteger(Number(this.spMoi.soLuongTon)) || 
+            this.spMoi.soLuongTon < 0
+          ) {
+            this.loiForm = 'Số lượng tồn phải là số nguyên không âm (>= 0).';
+            return;
+          }
+
+          // Thêm vào danh sách sản phẩm gốc
+          this.danhSachSanPham.push({
+            id: this.nextId++,
+            ten: this.spMoi.ten.trim(),
+            danhMuc: this.spMoi.danhMuc,
+            gia: Number(this.spMoi.gia),
+            soLuongTon: Number(this.spMoi.soLuongTon)
+          });
+
+          // Reset form sau khi thêm thành công
+          this.spMoi = {
+            ten: '',
+            danhMuc: this.danhSachDanhMuc[0],
+            gia: null,
+            soLuongTon: null
+          };
+        },
+
+        // Yêu cầu 7: Xóa sản phẩm sau khi người dùng xác nhận
+        xoaSanPham(sp) {
+          const xacNhan = window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${sp.ten}" (Mã #${sp.id}) không?`);
+          if (xacNhan) {
+            this.danhSachSanPham = this.danhSachSanPham.filter(item => item.id !== sp.id);
+          }
+        }
+      },
+
+      // Yêu cầu 10: Dùng mounted() đặt trạng thái trang thành "Sẵn sàng"
+      mounted() {
+        this.trangThaiTrang = 'Sẵn sàng';
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
