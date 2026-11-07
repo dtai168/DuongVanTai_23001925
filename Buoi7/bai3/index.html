@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 3 - Giỏ hàng với props và $emit</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="components/DongGioHang.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 16px; }
+    .cart-table { display: table; width: 100%; border-collapse: collapse; }
+    .cart-thead { display: table-header-group; background: #f3f3f3; font-weight: bold; }
+    .cart-tbody { display: table-row-group; }
+    .cart-row { display: table-row; }
+    .cart-cell { display: table-cell; border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+    .cart-cell.num { text-align: right; }
+    .cart-cell.qty { text-align: center; white-space: nowrap; }
+    .cart-cell.qty span { display: inline-block; min-width: 30px; }
+    button { cursor: pointer; padding: 4px 10px; }
+    button:disabled { cursor: not-allowed; opacity: .5; }
+    .del { background: #c62828; color: #fff; border: none; border-radius: 4px; }
+    .summary { margin-top: 12px; background: #e8f5e9; padding: 10px; }
+    .empty { padding: 20px; text-align: center; color: #888; font-style: italic; border: 1px dashed #ccc; }
+    .error { color: #c62828; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Giỏ hàng</h1>
+
+  <p class="error" v-if="loi">{{ loi }}</p>
+
+  <div v-if="gioHang.length === 0" class="empty">Giỏ hàng trống</div>
+
+  <template v-else>
+    <div class="cart-table">
+      <div class="cart-thead">
+        <div class="cart-row">
+          <div class="cart-cell">Sản phẩm</div>
+          <div class="cart-cell">Đơn giá</div>
+          <div class="cart-cell">Số lượng</div>
+          <div class="cart-cell">Thành tiền</div>
+          <div class="cart-cell"></div>
+        </div>
+      </div>
+      <div class="cart-tbody">
+        <dong-gio-hang
+          v-for="item in gioHang"
+          :key="item.id"
+          :san-pham="item"
+          @doi-so-luong="capNhatSoLuong"
+          @yeu-cau-xoa="xoaKhoiGio">
+        </dong-gio-hang>
+      </div>
+    </div>
+
+    <div class="summary">
+      Tổng số lượng: <strong>{{ tongSoLuong }}</strong><br>
+      Tổng tiền: <strong>{{ tongTien.toLocaleString('vi-VN') }} đồng</strong>
+    </div>
+  </template>
+</div>
+
+<script>
+  const app = Vue.createApp({
+    data() {
+      return {
+        loi: '',
+        gioHang: [
+          { id: 1, ten: 'Bút', donGia: 5000, soLuong: 2 },
+          { id: 2, ten: 'Quyển vở', donGia: 12000, soLuong: 3 }
+        ]
+      };
+    },
+    computed: {
+      tongSoLuong() {
+        return this.gioHang.reduce((t, sp) => t + sp.soLuong, 0);
+      },
+      tongTien() {
+        return this.gioHang.reduce((t, sp) => t + sp.donGia * sp.soLuong, 0);
+      }
+    },
+    methods: {
+      capNhatSoLuong(id, soLuongMoi) {
+        this.loi = '';
+        // Kiểm tra: số nguyên trong khoảng 1..99
+        if (!Number.isInteger(soLuongMoi) || soLuongMoi < 1 || soLuongMoi > 99) {
+          this.loi = 'Số lượng phải là số nguyên từ 1 đến 99.';
+          return;
+        }
+        const sp = this.gioHang.find(s => s.id === id);
+        if (!sp) {
+          this.loi = 'Không tìm thấy sản phẩm.';
+          return;
+        }
+        sp.soLuong = soLuongMoi; // cha sở hữu dữ liệu nên được phép cập nhật
+      },
+      xoaKhoiGio(id) {
+        this.loi = '';
+        if (!this.gioHang.some(s => s.id === id)) {
+          this.loi = 'Không tìm thấy sản phẩm cần xóa.';
+          return;
+        }
+        this.gioHang = this.gioHang.filter(s => s.id !== id);
+      }
+    }
+  });
+
+  app.component('dong-gio-hang', DongGioHang);
+  app.mount('#app');
+</script>
+</body>
+</html>

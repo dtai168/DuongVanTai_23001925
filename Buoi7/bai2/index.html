@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 2 - Danh mục sản phẩm bằng component</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Nạp file component trước khi tạo và mount ứng dụng -->
+  <script src="components/TheSanPham.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+    .card { position: relative; border: 1px solid #ddd; border-radius: 8px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .card img { width: 100%; height: 150px; object-fit: cover; border-radius: 6px; }
+    .card h3 { margin: 8px 0 4px; font-size: 17px; }
+    .price { color: #d84315; font-weight: bold; margin: 4px 0; }
+    .stock { color: #555; margin: 4px 0; font-size: 14px; }
+    .desc { background: #f7f7f7; padding: 8px; border-radius: 4px; font-size: 14px; }
+    .actions { display: flex; gap: 8px; margin-top: 8px; }
+    .actions button { flex: 1; padding: 6px; cursor: pointer; border-radius: 4px; border: 1px solid #999; background: #fff; }
+    .actions .buy { background: #2e7d32; color: #fff; border: none; }
+    .actions .buy:disabled { background: #bbb; cursor: not-allowed; }
+    .label-out { position: absolute; top: 18px; left: 18px; background: #c62828; color: #fff; padding: 3px 8px; border-radius: 10px; font-size: 12px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Danh mục sản phẩm</h1>
+  <div class="grid">
+    <the-san-pham
+      v-for="sp in sanPhams"
+      :key="sp.id"
+      :ten="sp.ten"
+      :gia="sp.gia"
+      :anh="sp.anh"
+      :mo-ta="sp.moTa"
+      :so-luong-ton="sp.soLuongTon">
+    </the-san-pham>
+  </div>
+</div>
+
+<script>
+  const app = Vue.createApp({
+    data() {
+      return {
+        sanPhams: [
+          {
+            id: 1,
+            ten: 'Áo thun nam',
+            gia: 150000,
+            anh: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80',
+            moTa: 'Áo thun cotton 100%, thoáng mát, phù hợp mặc hằng ngày.',
+            soLuongTon: 12
+          },
+          {
+            id: 2,
+            ten: 'Quần jean nữ',
+            gia: 350000,
+            anh: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80',
+            moTa: 'Quần jean co giãn, form ôm tôn dáng.',
+            soLuongTon: 0
+          },
+          {
+            id: 3,
+            ten: 'Giày thể thao',
+            gia: 890000,
+            anh: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80',
+            moTa: 'Giày chạy bộ êm ái, đế cao su chống trượt.',
+            soLuongTon: 5
+          },
+          // Sản phẩm không truyền mô tả -> dùng giá trị mặc định của prop moTa
+          {
+            id: 4,
+            ten: 'Mũ lưỡi trai',
+            gia: 120000,
+            anh: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=600&q=80',
+            soLuongTon: 8
+          }
+        ]
+      };
+    }
+  });
+
+  // Đăng ký component trước khi mount
+  app.component('the-san-pham', TheSanPham);
+  app.mount('#app');
+</script>
+</body>
+</html>
