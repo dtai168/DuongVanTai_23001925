@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Quản lý sản phẩm với PHP, MySQL và Vue.js — bài thực hành 9.">
+  <title>Quản lý sản phẩm · Buổi 09</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="./" aria-label="Quản lý sản phẩm, trang chủ">
+        <span class="brand-mark" aria-hidden="true">sp<span>.</span></span>
+        <span>Sổ sản phẩm</span>
+      </a>
+      <span class="lesson-tag">BÀI THỰC HÀNH <strong>09</strong></span>
+    </div>
+  </div>
+
+  <p id="boot-message" class="boot-message" role="status">Đang mở ứng dụng…</p>
+  <noscript><p class="boot-message">Hãy bật JavaScript để sử dụng ứng dụng.</p></noscript>
+
+  <main id="app" class="container" v-cloak>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">GÓC LÀM VIỆC</p>
+        <h1>Quản lý sản phẩm</h1>
+        <p class="intro">Một nơi để theo dõi và cập nhật những sản phẩm của bạn.</p>
+      </div>
+      <button class="button button-secondary refresh-button" type="button" @click="loadProducts()" :disabled="busy">
+        <span aria-hidden="true">↻</span> {{ loading ? 'Đang tải…' : 'Tải lại danh sách' }}
+      </button>
+    </header>
+
+    <div v-if="error" class="message message-error" role="alert">{{ error }}</div>
+    <div v-if="notice" class="message message-success" role="status">{{ notice }}</div>
+
+    <section class="stats" aria-label="Tổng quan sản phẩm">
+      <div class="stat-card">
+        <span class="stat-label">Tổng sản phẩm</span>
+        <strong>{{ hasLoaded ? formatNumber(pagination.total) : '—' }}</strong>
+        <span class="stat-unit">sản phẩm trong danh sách</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Số lượng tồn</span>
+        <strong>{{ hasLoaded ? formatNumber(summary.total_stock) : '—' }}</strong>
+        <span class="stat-unit">đơn vị trong kho</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Đã hết hàng</span>
+        <strong :class="{ 'text-amber': summary.out_of_stock > 0 }">{{ hasLoaded ? formatNumber(summary.out_of_stock) : '—' }}</strong>
+        <span class="stat-unit">sản phẩm có tồn kho bằng 0</span>
+      </div>
+    </section>
+
+    <div class="workspace">
+      <section class="panel form-panel" aria-labelledby="form-title">
+        <div class="panel-heading">
+          <span class="section-icon" aria-hidden="true">{{ editingId !== null ? '↗' : '+' }}</span>
+          <div>
+            <h2 id="form-title">{{ pendingUploadId !== null ? 'Tải ảnh sản phẩm' : editingId !== null ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm' }}</h2>
+            <p v-if="pendingUploadId !== null">Đã lưu thông tin sản phẩm #{{ pendingUploadId }}.</p>
+            <p v-else>{{ editingId !== null ? 'Đang chỉnh sửa sản phẩm #' + editingId : 'Điền thông tin sản phẩm mới.' }}</p>
+          </div>
+        </div>
+
+        <form @submit.prevent="saveProduct" novalidate>
+          <fieldset :disabled="busy">
+            <fieldset :disabled="pendingUploadId !== null">
+              <div class="field">
+                <label for="product-name">Tên sản phẩm <span class="required">*</span></label>
+                <input id="product-name" ref="productName" v-model="form.name" type="text" required
+                  placeholder="Ví dụ: Bút bi" autocomplete="off" aria-describedby="name-hint">
+                <span id="name-hint" class="field-hint">Từ 1 đến 100 ký tự.</span>
+              </div>
+              <div class="field">
+                <label for="product-price">Đơn giá <span class="required">*</span></label>
+                <div class="input-with-unit">
+                  <input id="product-price" v-model.number="form.price" type="number" min="1" max="2147483647" step="1"
+                    required placeholder="Ví dụ: 5000" aria-describedby="price-hint">
+                  <span aria-hidden="true">đồng</span>
+                </div>
+                <span id="price-hint" class="field-hint">Số nguyên lớn hơn 0, tính bằng đồng.</span>
+              </div>
+              <div class="field">
+                <label for="product-stock">Số lượng tồn <span class="required">*</span></label>
+                <input id="product-stock" v-model.number="form.stock" type="number" min="0" max="2147483647" step="1"
+                  required placeholder="Ví dụ: 20" aria-describedby="stock-hint">
+                <span id="stock-hint" class="field-hint">Số nguyên không âm. Nhập 0 nếu hết hàng.</span>
+              </div>
+            </fieldset>
+            <div class="field">
+              <label for="product-image">Ảnh sản phẩm</label>
+              <div class="file-picker">
+                <input id="product-image" class="sr-only file-picker-input" ref="productImage" type="file"
+                  accept=".jpg,.jpeg,.png" @change="selectImage" aria-describedby="image-hint"
+                  :aria-invalid="imageError ? 'true' : undefined">
+                <label for="product-image" class="button button-secondary file-picker-button">Chọn tệp</label>
+                <span class="file-picker-status" role="status">{{ selectedImage ? selectedImage.name : 'Chưa chọn tệp' }}</span>
+              </div>
+              <span id="image-hint" class="field-hint">Không bắt buộc. JPG, JPEG hoặc PNG, tối đa 2 MB.</span>
+              <img v-if="imagePreview" class="image-preview" :src="imagePreview"
+                :alt="selectedImage ? 'Xem trước ảnh đã chọn' : 'Ảnh sản phẩm hiện tại'">
+              <button v-if="selectedImage || imageError" class="text-button edit-button clear-image-button"
+                type="button" @click="clearImageSelection">Xóa lựa chọn ảnh</button>
+              <p v-if="imageError" class="field-error" role="alert">{{ imageError }}</p>
+              <p v-if="uploadError" class="field-error" role="alert">{{ uploadError }}</p>
+            </div>
+
+            <div class="form-actions">
+              <button v-if="pendingUploadId !== null" class="button button-primary" type="submit" :disabled="!selectedImage">
+                {{ uploading ? 'Đang tải ảnh…' : 'Thử tải ảnh lại' }}
+              </button>
+              <button v-else class="button button-primary" type="submit" :disabled="!!imageError">
+                {{ saving ? 'Đang lưu…' : editingId !== null ? 'Lưu thay đổi' : 'Lưu sản phẩm' }}
+              </button>
+              <button v-if="pendingUploadId !== null || editingId !== null" class="button button-secondary"
+                type="button" @click="resetForm">{{ pendingUploadId !== null ? 'Bỏ qua tải ảnh' : 'Hủy chỉnh sửa' }}</button>
+            </div>
+          </fieldset>
+        </form>
+        <p class="form-note"><span aria-hidden="true">ⓘ</span> Thông tin được lưu sau khi bạn bấm Lưu.</p>
+      </section>
+
+      <section class="panel list-panel" aria-labelledby="list-title" :aria-busy="loading">
+        <div class="list-heading">
+          <div>
+            <h2 id="list-title">Danh sách sản phẩm</h2>
+          </div>
+          <span v-if="loading" class="loading-label" role="status">Đang tải…</span>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <caption class="sr-only">Danh sách sản phẩm và các thao tác chỉnh sửa, xóa</caption>
+            <thead>
+              <tr>
+                <th scope="col">Ảnh</th>
+                <th scope="col">Sản phẩm</th>
+                <th scope="col" class="number">Đơn giá</th>
+                <th scope="col" class="number">Tồn kho</th>
+                <th scope="col" class="actions-heading">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="product in products" :key="product.id" :class="{ 'editing-row': editingId === product.id }">
+                <td class="image-cell">
+                  <img v-if="product.image" class="product-thumbnail" :src="product.image" :alt="'Ảnh ' + product.name">
+                  <span v-else>Chưa có ảnh</span>
+                </td>
+                <td class="product-cell">
+                  <strong>{{ product.name }}</strong>
+                  <span class="product-id">#{{ String(product.id).padStart(3, '0') }}</span>
+                </td>
+                <td class="number price">{{ formatPrice(product.price) }}</td>
+                <td class="number">
+                  <span class="stock-badge" :class="product.stock === 0 ? 'stock-empty' : 'stock-available'">
+                    {{ product.stock === 0 ? 'Hết hàng · 0' : formatNumber(product.stock) }}
+                  </span>
+                </td>
+                <td class="row-actions">
+                  <button class="text-button edit-button" type="button" @click="editProduct(product)" :disabled="busy || pendingUploadId !== null"
+                    :aria-label="'Sửa ' + product.name">Sửa</button>
+                  <button class="text-button delete-button" type="button" @click="deleteProduct(product)" :disabled="busy"
+                    :aria-label="'Xóa ' + product.name">{{ deletingId === product.id ? 'Đang xóa…' : 'Xóa' }}</button>
+                </td>
+              </tr>
+              <tr v-if="products.length === 0">
+                <td colspan="5" class="empty-state">
+                  <span class="empty-icon" aria-hidden="true">□</span>
+                  <strong>{{ loading ? 'Đang tải sản phẩm…' : hasLoaded ? 'Chưa có sản phẩm' : 'Chưa tải được danh sách' }}</strong>
+                  <p>{{ loading ? 'Vui lòng đợi trong giây lát.' : hasLoaded ? 'Thêm sản phẩm đầu tiên bằng biểu mẫu bên cạnh.' : 'Bấm Tải lại danh sách để thử kết nối lại.' }}</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <nav v-if="hasLoaded" class="table-footer" aria-label="Phân trang sản phẩm">
+          <span role="status">Trang {{ pagination.page }} / {{ pagination.total_pages }} — Tổng {{ formatNumber(pagination.total) }} sản phẩm</span>
+          <div class="page-actions">
+            <button class="button button-secondary" type="button" @click="loadProducts(pagination.page - 1)"
+              :disabled="busy || pagination.page <= 1">Trước</button>
+            <button class="button button-secondary" type="button" @click="loadProducts(pagination.page + 1)"
+              :disabled="busy || pagination.page >= pagination.total_pages">Sau</button>
+          </div>
+        </nav>
+      </section>
+    </div>
+    <footer class="page-footer">Thực hành PHP và Vue.js <span aria-hidden="true">·</span> Buổi 09</footer>
+  </main>
+</body>
+</html>
